@@ -19,8 +19,10 @@ namespace Lemmu
 
         private const int KENTANLEVEYS = 1000;
         private const int KENTANKORKEUS = 800;
+        private Vector ruuanSijaintiAlussa = new Vector(30, -130);
+        private Vector hahmonSijainti = new Vector(-150, 20);
 
-        private int nalka = 100;
+        private readonly int nalka = 100;
         private IntMeter nalkaLaskuri;
         //private int jano  = 0;
         //private int mieliala = 50;
@@ -53,9 +55,10 @@ namespace Lemmu
 
             PhysicsObject hahmo = LuoHahmo();
             PhysicsObject ruoka = LuoSyotava();
+            Add(ruoka, 1);
 
             Mouse.IsCursorVisible = true;
-            //paikkaRuudulla = Mouse.PositionOnScreen;
+            paikkaRuudulla = Mouse.PositionOnScreen;
             //Mouse.Listen(MouseButton.Left, ButtonState.Pressed, Toiminto, "Toiminto", paikkaRuudulla);
 
             timer = new Timer();
@@ -64,17 +67,11 @@ namespace Lemmu
             timer.Start();
 
             Mouse.ListenOn(ruoka, MouseButton.Left, ButtonState.Down, Liiku, null, ruoka);
-            Mouse.ListenOn(ruoka, MouseButton.Left, ButtonState.Released, Syo, null, ruoka);
+            Mouse.ListenOn(ruoka, MouseButton.Left, ButtonState.Released, Syo, null, ruoka, paikkaRuudulla, hahmo.Position);
+            
 
             LuoNalkaLaskuri();
-            AddCollisionHandler(ruoka, "ruoka", TormaaHahmoon);
-        }
-
-
-        public void TormaaHahmoon(PhysicsObject syoja, PhysicsObject syotava)
-        {
-            syotava.Destroy();
-            nalkaLaskuri.AddValue(-5);           
+            
         }
 
 
@@ -84,24 +81,31 @@ namespace Lemmu
             PhysicsObject hahmo = new PhysicsObject(440.0, 368.0);
             hahmo.IgnoresCollisionResponse = true;
             hahmo.IgnoresGravity = true;
-            hahmo.X = -150;
-            hahmo.Y = 20;
+            hahmo.Position = hahmonSijainti;
             hahmo.Image = hahmonKuva;
-            Add(hahmo);
+            Add(hahmo, 0);
             return hahmo;
         }
 
 
-        void Syo(PhysicsObject ruoka)
+        void Syo(PhysicsObject ruoka, Vector sijainti, Vector hahmonSijainti)
         {
-            ruoka.Destroy();
-            nalkaLaskuri.Value += 10;
+            if (hahmonSijainti.Distance(ruoka.Position) <= 150 )
+            {
+                ruoka.Destroy();
+                nalkaLaskuri.Value += 10;
+                Timer.SingleShot(1, null);
+                ruoka = LuoSyotava();
+                
+            }
+            
         }
 
         void Liiku(PhysicsObject ruoka)
         {
             Listener hiirenKuuntelija = Mouse.ListenMovement(0.1, delegate ()
             {
+                
                 ruoka.Position = Mouse.PositionOnWorld;
 
             }, "");
@@ -112,10 +116,10 @@ namespace Lemmu
             PhysicsObject ruoka = new PhysicsObject(200.0, 68.0);
             ruoka.IgnoresCollisionResponse = true;
             ruoka = new PhysicsObject(200, 63);
-            ruoka.X = 30;
-            ruoka.Y = -130;
+            ruoka.Position = ruuanSijaintiAlussa;
             ruoka.Image = ruuanKuva;
-            Add(ruoka);
+            Add(ruoka, 1);
+
             return ruoka;
         }
 
@@ -123,9 +127,9 @@ namespace Lemmu
         void LuoNalkaLaskuri()
         {
             nalkaLaskuri = new IntMeter(nalka);
-            nalkaLaskuri.MaxValue = 100;
+            nalkaLaskuri.MaxValue = nalka;
             nalkaLaskuri.MinValue = 0;
-            // TODO: if nälkä = 100 --> peli loppui
+            // TODO: if nälkä = 0 --> peli loppui
 
 
             Label nayttoNalka = new Label();
